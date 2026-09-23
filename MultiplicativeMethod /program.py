@@ -37,3 +37,35 @@ print("ЧАСТЬ 0. Сгенерированная последовательн
 print("=" * 60)
 print(f"Параметры: M = {MODULUS}, a = {MULTIPLIER}, b = {INCREMENT}, x0 = {SEED}")
 print(f"x_min = {min(raw_values)}, x_max = {max(raw_values)}")
+
+# ============================================================
+# ЧАСТЬ А. КРИТЕРИЙ χ² ПИРСОНА (проверка равномерности)
+# ============================================================
+
+print("\n" + "=" * 60)
+print("ЧАСТЬ А. Критерий χ² Пирсона")
+print("=" * 60)
+
+SIGNIFICANCE_LEVEL = 0.05
+sample_size = len(raw_values)
+
+# --- 1. Определяем число и длину интервалов по формуле Стерджерса ---
+min_value = min(raw_values)
+max_value = max(raw_values)
+value_range = max_value - min_value
+
+interval_width = value_range / (1 + 3.3221 * math.log10(sample_size))
+interval_count = int(math.ceil(value_range / interval_width))
+
+print(f"Длина интервала h = {interval_width:.4f}, число интервалов k = {interval_count}")
+
+# --- 2. Строим границы интервалов и считаем эмпирические частоты ---
+interval_edges = [min_value + i * interval_width for i in range(interval_count + 1)]
+interval_edges[-1] = max_value + 1e-9  
+
+empirical_frequencies = [0] * interval_count
+for value in raw_values:
+    for i in range(interval_count):
+        if interval_edges[i] <= value < interval_edges[i + 1]:
+            empirical_frequencies[i] += 1
+            break
