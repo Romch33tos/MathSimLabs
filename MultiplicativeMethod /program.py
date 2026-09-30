@@ -1,253 +1,348 @@
 import math
-import numpy as np
-from scipy import stats
+
+# ============================================================
+# ГЕНЕРАЦИЯ ПОСЛЕДОВАТЕЛЬНОСТИ ПСЕВДОСЛУЧАЙНЫХ ЧИСЕЛ
+# ============================================================
+
+def generate_random_sequence(seed, a, b, m, count):
+  """Генерация последовательности ПСЧ линейным конгруэнтным методом.
+  Затравка seed НЕ входит в результат — первым элементом идёт x1."""
+  sequence = []
+  x = seed
+  for i in range(count):
+    x = (a * x + b) % m   # сначала вычисляем x_{i+1}
+    sequence.append(x)    # затем записываем его в последовательность
+  return sequence
+
+
+def print_sequence(title, seq):
+  """Вывод последовательности в консоль."""
+  print(title)
+  for i in range(0, len(seq), 10):
+    chunk = seq[i:i+10]
+    print("  " + " ".join(f"{v:>6}" for v in chunk))
+  print()
 
 
 # ============================================================
-# ЧАСТЬ 0. ГЕНЕРАЦИЯ ПОСЛЕДОВАТЕЛЬНОСТИ ПСЧ
+# КРИТЕРИЙ ХИ-КВАДРАТ ПИРСОНА (ПРОВЕРКА РАВНОМЕРНОСТИ)
 # ============================================================
 
-def generate_pseudo_random_sequence(multiplier, increment, modulus, seed, count):
-    """
-    Линейный конгруэнтный генератор:
-        next_value = (multiplier * current_value + increment) mod modulus
-
-    Возвращает:
-        raw_values      — список целых x_i
-        normalized_values — список u_i = x_i / modulus в [0, 1)
-    """
-    raw_values = []
-    current_value = seed
-
-    for _ in range(count):
-        raw_values.append(current_value)
-        current_value = (multiplier * current_value + increment) % modulus
-
-    normalized_values = [value / modulus for value in raw_values]
-    return raw_values, normalized_values
+def sturges_interval_length(x_max, x_min, n):
+  """Длина интервала по формуле Стерджерса."""
+  return (x_max - x_min) / (1 + 3.3221 * math.log10(n))
 
 
-# --- Параметры генератора ---
-MODULUS = 9973          # M — простое число
-MULTIPLIER = 101        # a — простое, a mod 8 = 5
-INCREMENT = 97          # b — того же порядка, что a
-SEED = 38               # x0 — затравка
-SAMPLE_SIZE = 100       # N — количество чисел
+def build_intervals(data, h):
+  """Разбиение данных на интервалы и подсчёт частот."""
+  x_min = min(data)
+  x_max = max(data)
+  num_intervals = int(math.ceil((x_max - x_min) / h))
+  if num_intervals < 4:
+    num_intervals = 4
 
-raw_values, normalized_values = generate_pseudo_random_sequence(
-    multiplier=MULTIPLIER,
-    increment=INCREMENT,
-    modulus=MODULUS,
-    seed=SEED,
-    count=SAMPLE_SIZE
-)
-
-print("=" * 60)
-print("ЧАСТЬ 0. Сгенерированная последовательность")
-print("=" * 60)
-print(f"Параметры: M = {MODULUS}, a = {MULTIPLIER}, b = {INCREMENT}, x0 = {SEED}")
-print("Первые 10 x_i:", raw_values[:10])
-print("Первые 10 u_i:", [round(v, 4) for v in normalized_values[:10]])
-print(f"x_min = {min(raw_values)}, x_max = {max(raw_values)}")
-
-
-# ============================================================
-# ЧАСТЬ А. КРИТЕРИЙ χ² ПИРСОНА (проверка равномерности)
-# ============================================================
-
-print("\n" + "=" * 60)
-print("ЧАСТЬ А. Критерий χ² Пирсона")
-print("=" * 60)
-
-SIGNIFICANCE_LEVEL = 0.05
-sample_size = len(raw_values)
-
-# --- 1. Определяем число и длину интервалов по формуле Стерджерса ---
-min_value = min(raw_values)
-max_value = max(raw_values)
-value_range = max_value - min_value
-
-interval_width = value_range / (1 + 3.3221 * math.log10(sample_size))
-interval_count = int(math.ceil(value_range / interval_width))
-
-print(f"Длина интервала h = {interval_width:.4f}, число интервалов k = {interval_count}")
-
-# --- 2. Строим границы интервалов и считаем эмпирические частоты ---
-interval_edges = [min_value + i * interval_width for i in range(interval_count + 1)]
-interval_edges[-1] = max_value + 1e-9  # чтобы включить максимальное значение
-
-empirical_frequencies = [0] * interval_count
-for value in raw_values:
-    for i in range(interval_count):
-        if interval_edges[i] <= value < interval_edges[i + 1]:
-            empirical_frequencies[i] += 1
-            break
-
-print("Интервалы и эмпирические частоты:")
-for i in range(interval_count):
-    print(f"  [{interval_edges[i]:.2f}, {interval_edges[i+1]:.2f}): "
-          f"n_{i+1} = {empirical_frequencies[i]}")
-
-# --- 3. Оценки параметров a* и b* равномерного распределения ---
-sample_mean = np.mean(raw_values)
-sample_std = np.std(raw_values, ddof=1)
-
-estimated_lower_bound = sample_mean - math.sqrt(3) * sample_std
-estimated_upper_bound = sample_mean + math.sqrt(3) * sample_std
-
-print(f"\nОценки: a* = {estimated_lower_bound:.4f}, b* = {estimated_upper_bound:.4f}")
-
-# --- 4. Теоретические частоты для каждого интервала ---
-theoretical_frequencies = [0.0] * interval_count
-for i in range(interval_count):
-    left_edge = max(interval_edges[i], estimated_lower_bound)
-    right_edge = min(interval_edges[i + 1], estimated_upper_bound)
-    overlap_width = max(0.0, right_edge - left_edge)
-    theoretical_frequencies[i] = (
-        sample_size * overlap_width / (estimated_upper_bound - estimated_lower_bound)
-    )
-
-print("\nТеоретические частоты n_i':")
-for i in range(interval_count):
-    print(f"  n'_{i+1} = {theoretical_frequencies[i]:.3f}")
-
-# --- 5. Объединяем малочисленные интервалы (n_i < 5) ---
-MIN_EXPECTED_FREQUENCY = 5
-
-merged_empirical = []
-merged_theoretical = []
-i = 0
-while i < interval_count:
-    empirical_sum = empirical_frequencies[i]
-    theoretical_sum = theoretical_frequencies[i]
-    j = i
-    while empirical_sum < MIN_EXPECTED_FREQUENCY and j + 1 < interval_count:
-        j += 1
-        empirical_sum += empirical_frequencies[j]
-        theoretical_sum += theoretical_frequencies[j]
-    merged_empirical.append(empirical_sum)
-    merged_theoretical.append(theoretical_sum)
-    i = j + 1
-
-group_count = len(merged_empirical)
-print(f"\nПосле объединения: число групп s = {group_count}")
-
-# --- 6. Статистика χ² ---
-chi_squared_observed = sum(
-    (empirical - theoretical) ** 2 / theoretical
-    for empirical, theoretical in zip(merged_empirical, merged_theoretical)
-    if theoretical > 0
-)
-degrees_of_freedom = group_count - 3
-print(f"χ²_набл = {chi_squared_observed:.4f}, "
-      f"число степеней свободы = {degrees_of_freedom}")
-
-# --- 7. Сравнение с критическим значением ---
-if degrees_of_freedom > 0:
-    chi_squared_critical = stats.chi2.ppf(1 - SIGNIFICANCE_LEVEL, degrees_of_freedom)
-    print(f"χ²_кр(α={SIGNIFICANCE_LEVEL}; df={degrees_of_freedom}) = "
-          f"{chi_squared_critical:.4f}")
-
-    if chi_squared_observed < chi_squared_critical:
-        print(">>> Гипотеза о равномерном распределении НЕ отвергается.")
+  intervals = []
+  frequencies = []
+  start = x_min
+  for i in range(num_intervals):
+    end = start + h
+    if i == num_intervals - 1:
+      count = sum(1 for v in data if start <= v <= end)
     else:
-        print(">>> Гипотеза о равномерном распределении ОТВЕРГАЕТСЯ.")
-else:
-    print(">>> Недостаточно степеней свободы — увеличьте выборку.")
+      count = sum(1 for v in data if start <= v < end)
+    intervals.append((start, end))
+    frequencies.append(count)
+    start = end
+  return intervals, frequencies
+
+
+def print_intervals(intervals, frequencies, data):
+  """Наглядный вывод интервалов и чисел, попавших в них."""
+  print("РАЗБИЕНИЕ НА ИНТЕРВАЛЫ (содержимое интервалов):")
+  for i, (start, end) in enumerate(intervals):
+    numbers_in = [v for v in data if start <= v < end]
+    if i == len(intervals) - 1:
+      numbers_in = [v for v in data if start <= v <= end]
+    preview = numbers_in[:8]
+    suffix = "..." if len(numbers_in) > 8 else ""
+    print(f"  Интервал {i+1}: [{start:8.2f}; {end:8.2f})  n={frequencies[i]:>3}  "
+          f"числа: {preview}{suffix}")
+  print()
+
+
+def chi_square_test(data, alpha=0.05):
+  """Проверка гипотезы о равномерном распределении по критерию Пирсона."""
+  n = len(data)
+  print("=" * 60)
+  print("КРИТЕРИЙ ХИ-КВАДРАТ ПИРСОНА")
+  print("=" * 60)
+
+  mean = sum(data) / n
+  variance = sum((x - mean) ** 2 for x in data) / n
+  sigma = math.sqrt(variance)
+  a_est = mean - math.sqrt(3) * sigma
+  b_est = mean + math.sqrt(3) * sigma
+
+  print(f"Выборочное среднее x̄    = {mean:.4f}")
+  print(f"Выборочная дисперсия D  = {variance:.4f}")
+  print(f"Стандартное отклонение σ = {sigma:.4f}")
+  print(f"Оценка a* = x̄ - √3·σ    = {a_est:.4f}")
+  print(f"Оценка b* = x̄ + √3·σ    = {b_est:.4f}")
+
+  density = 1.0 / (b_est - a_est)
+  print(f"Плотность f(x) = 1/(b*-a*) = {density:.6f}")
+  print()
+
+  x_min = min(data)
+  x_max = max(data)
+  h = sturges_interval_length(x_max, x_min, n)
+  print(f"Длина интервала h (Стерджерс) = {h:.4f}")
+
+  intervals, frequencies = build_intervals(data, h)
+  print_intervals(intervals, frequencies, data)
+
+  k = len(intervals)
+
+  merged_intervals = []
+  merged_frequencies = []
+  buffer_start = None
+  buffer_count = 0
+
+  for i in range(k):
+    if buffer_start is None:
+      buffer_start = intervals[i][0]
+    buffer_count += frequencies[i]
+    if buffer_count >= 5:
+      merged_intervals.append((buffer_start, intervals[i][1]))
+      merged_frequencies.append(buffer_count)
+      buffer_start = None
+      buffer_count = 0
+
+  if buffer_count > 0:
+    if merged_intervals:
+      prev_start = merged_intervals[-1][0]
+      merged_intervals[-1] = (prev_start, intervals[-1][1])
+      merged_frequencies[-1] += buffer_count
+    else:
+      merged_intervals.append((buffer_start, intervals[-1][1]))
+      merged_frequencies.append(buffer_count)
+
+  s = len(merged_intervals)
+  print(f"После объединения малочисленных частот: s = {s} интервалов")
+  for i, (start, end) in enumerate(merged_intervals):
+    print(f"  [{start:8.2f}; {end:8.2f})  n = {merged_frequencies[i]}")
+  print()
+
+  theoretical = []
+  for i in range(s):
+    start, end = merged_intervals[i]
+    left = max(start, a_est)
+    right = min(end, b_est)
+    if right < left:
+      right = left
+    p = (right - left) / (b_est - a_est)
+    theoretical.append(n * p)
+
+  print("ТЕОРЕТИЧЕСКИЕ ЧАСТОТЫ:")
+  for i in range(s):
+    print(f"  Интервал {i+1}: n' = {theoretical[i]:.4f}")
+  print()
+
+  chi_square = 0.0
+  print("РАСЧЁТ СТАТИСТИКИ χ²:")
+  for i in range(s):
+    if theoretical[i] > 0:
+      term = (merged_frequencies[i] - theoretical[i]) ** 2 / theoretical[i]
+      chi_square += term
+      print(f"  ({merged_frequencies[i]} - {theoretical[i]:.3f})² / {theoretical[i]:.3f} = {term:.4f}")
+  print(f"\nχ²_набл = {chi_square:.4f}")
+
+  degrees = s - 3
+  if degrees < 1:
+    degrees = 1
+  chi_critical = get_chi_square_critical(degrees, alpha)
+  print(f"Число степеней свободы k = s - 3 = {degrees}")
+  print(f"Критическая точка χ²_кр({alpha}; {degrees}) ≈ {chi_critical}")
+
+  if chi_square < chi_critical:
+    print("ВЫВОД: χ²_набл < χ²_кр — нет оснований отвергнуть гипотезу о равномерном распределении.")
+  else:
+    print("ВЫВОД: χ²_набл > χ²_кр — гипотеза о равномерном распределении отвергается.")
+  print()
+  return chi_square < chi_critical
+
+
+def get_chi_square_critical(degrees, alpha):
+  """Приближённые критические значения χ² для уровня значимости 0.05."""
+  table = {
+    1: 3.841, 2: 5.991, 3: 7.815, 4: 9.488, 5: 11.070,
+    6: 12.592, 7: 14.067, 8: 15.507, 9: 16.919, 10: 18.307,
+    11: 19.675, 12: 21.026, 13: 22.362, 14: 23.685, 15: 24.996,
+    16: 26.296, 17: 27.587, 18: 28.869, 19: 30.144, 20: 31.410,
+    21: 32.671, 22: 33.924, 23: 35.172, 24: 36.415, 25: 37.652,
+    26: 38.885, 27: 40.113, 28: 41.337, 29: 42.557, 30: 43.773
+  }
+  if degrees in table:
+    return table[degrees]
+  return degrees + 1.645 * math.sqrt(2 * degrees)
 
 
 # ============================================================
-# ЧАСТЬ Б. КРИТЕРИЙ СЕРИЙ (проверка случайности)
+# КРИТЕРИЙ СЕРИЙ (ПРОВЕРКА СЛУЧАЙНОСТИ)
 # ============================================================
 
-print("\n" + "=" * 60)
-print("ЧАСТЬ Б. Критерий серий")
-print("=" * 60)
+def median_test(data, alpha=0.05):
+  """Проверка случайности последовательности по критерию серий."""
+  n = len(data)
+  print("=" * 60)
+  print("КРИТЕРИЙ СЕРИЙ (проверка случайности)")
+  print("=" * 60)
 
-# --- 1. Вариационный ряд и медиана ---
-sorted_values = sorted(raw_values)
-total_count = len(sorted_values)
+  sorted_data = sorted(data)
+  if n % 2 == 1:
+    median = sorted_data[n // 2]
+  else:
+    median = 0.5 * (sorted_data[n // 2 - 1] + sorted_data[n // 2])
+  print(f"Объём выборки N = {n}")
+  print(f"Медиана med(N) = {median:.4f}")
+  print()
 
-if total_count % 2 == 1:
-    median_value = sorted_values[(total_count + 1) // 2 - 1]
-else:
-    median_value = 0.5 * (
-        sorted_values[total_count // 2 - 1] + sorted_values[total_count // 2]
-    )
+  signs = []
+  for x in data:
+    if x >= median:
+      signs.append("+")
+    else:
+      signs.append("-")
 
-print(f"N = {total_count}, медиана med(N) = {median_value}")
+  print("Последовательность знаков:")
+  for i in range(0, len(signs), 40):
+    print("  " + "".join(signs[i:i+40]))
+  print()
 
-# --- 2. Последовательность знаков (+ / -) ---
-signs = ['+' if value >= median_value else '-' for value in raw_values]
-sign_string = ''.join(signs)
-print(f"Последовательность знаков (первые 60): {sign_string[:60]}...")
+  num_series = 1
+  for i in range(1, n):
+    if signs[i] != signs[i-1]:
+      num_series += 1
+  print(f"Число серий S = {num_series}")
 
-# --- 3. Подсчёт числа серий ---
-series_count = 1
-for i in range(1, total_count):
-    if signs[i] != signs[i - 1]:
-        series_count += 1
+  mean_series = n / 2 + 1
+  std_series = math.sqrt(n - 1) / 2
+  z = get_z_critical(alpha)
+  lower = mean_series - z * std_series
+  upper = mean_series + z * std_series
+  print(f"Математическое ожидание S: {mean_series:.2f}")
+  print(f"СКО σ(S) = √(N-1)/2 = {std_series:.4f}")
+  print(f"Критические границы: [{lower:.2f}; {upper:.2f}]")
 
-print(f"Число серий S = {series_count}")
+  if lower < num_series < upper:
+    print("ВЫВОД: число серий в допустимых границах — гипотеза о случайности принимается.")
+  else:
+    print("ВЫВОД: число серий выходит за критические границы — гипотеза о случайности отвергается.")
+  print()
+  return lower < num_series < upper
 
-# --- 4. Критические границы из таблицы (Приложение 1) ---
-# Для N = 100 и α = 0.05 (N/2 = 50):
-lower_critical_series = 36
-upper_critical_series = 64
 
-print(f"Критические границы: S_low = {lower_critical_series}, "
-      f"S_high = {upper_critical_series}")
-
-if lower_critical_series < series_count < upper_critical_series:
-    print(">>> Гипотеза о случайности НЕ отвергается.")
-else:
-    print(">>> Гипотеза о случайности ОТВЕРГАЕТСЯ.")
+def get_z_critical(alpha):
+  """Квантиль нормального распределения для двусторонней критической области."""
+  if alpha == 0.10:
+    return 1.645
+  elif alpha == 0.05:
+    return 1.960
+  elif alpha == 0.02:
+    return 2.326
+  elif alpha == 0.01:
+    return 2.576
+  else:
+    return 1.960
 
 
 # ============================================================
-# ЧАСТЬ В. ПРОВЕРКА НЕЗАВИСИМОСТИ (коэффициент корреляции)
+# ПРОВЕРКА НЕЗАВИСИМОСТИ (КОЭФФИЦИЕНТ КОРРЕЛЯЦИИ)
 # ============================================================
 
-print("\n" + "=" * 60)
-print("ЧАСТЬ В. Проверка независимости")
-print("=" * 60)
+def correlation_test(data, alpha=0.05):
+  """Проверка независимости через коэффициент корреляции r(x_i, i)."""
+  n = len(data)
+  print("=" * 60)
+  print("ПРОВЕРКА НЕЗАВИСИМОСТИ (коэффициент корреляции)")
+  print("=" * 60)
 
-total_count = len(raw_values)
-indices = np.arange(1, total_count + 1)
-values_array = np.array(raw_values, dtype=float)
+  sum_i_xi = 0.0
+  sum_xi = 0.0
+  sum_xi_sq = 0.0
+  for i in range(n):
+    idx = i + 1
+    sum_i_xi += idx * data[i]
+    sum_xi += data[i]
+    sum_xi_sq += data[i] ** 2
 
-# --- 1. Коэффициент корреляции между x_i и его номером i ---
-sum_index_times_value = np.sum(indices * values_array)
-sum_values = np.sum(values_array)
-sum_values_squared = np.sum(values_array ** 2)
+  mean_i_xi = sum_i_xi / n
+  mean_xi = sum_xi / n
+  mean_xi_sq = sum_xi_sq / n
 
-correlation_numerator = (
-    (1 / total_count) * sum_index_times_value
-    - (1 / total_count) * sum_values * (total_count + 1) / 2
-)
-correlation_denominator = math.sqrt(
-    (
-        (1 / total_count) * sum_values_squared
-        - ((1 / total_count) * sum_values) ** 2
-    ) * (total_count ** 2 - 1) / 12
-)
+  numerator = mean_i_xi - mean_xi * (n + 1) / 2
+  denominator = math.sqrt((mean_xi_sq - mean_xi ** 2) * (1.0 / 12.0) * (n ** 2 - 1))
 
-correlation_coefficient = correlation_numerator / correlation_denominator
-print(f"r(x_i, i) = {correlation_coefficient:.6f}")
+  if denominator == 0:
+    r = 0.0
+  else:
+    r = numerator / denominator
 
-# --- 2. Верхняя граница доверительного интервала ---
-z_alpha = stats.norm.ppf(1 - SIGNIFICANCE_LEVEL / 2)
-correlation_threshold = (
-    z_alpha * (1 - correlation_coefficient ** 2) / math.sqrt(total_count)
-)
+  print(f"Коэффициент корреляции r(x_i, i) = {r:.6f}")
 
-print(f"z_alpha = {z_alpha:.4f}")
-print(f"r_max = {correlation_threshold:.6f}")
+  z = get_z_critical(alpha)
+  r_max = z * (1 - r ** 2) / math.sqrt(n)
+  print(f"Z_α (при α={alpha}) = {z}")
+  print(f"r_max = Z_α · (1 - r²) / √N = {r_max:.6f}")
 
-# --- 3. Сравнение ---
-if abs(correlation_coefficient) > correlation_threshold:
-    print(">>> Есть корреляционная связь — "
-          "гипотеза независимости ОТВЕРГАЕТСЯ.")
-else:
-    print(">>> Корреляционная связь не значима — "
-          "гипотеза независимости ПРИНИМАЕТСЯ.")
+  if abs(r) < abs(r_max):
+    print("ВЫВОД: |r| < r_max — гипотеза о независимости принимается.")
+  else:
+    print("ВЫВОД: |r| ≥ r_max — имеет место корреляционная связь.")
+  print()
+  return abs(r) < abs(r_max)
+
+
+# ============================================================
+# ГЛАВНАЯ ПРОГРАММА
+# ============================================================
+
+def main():
+  print("=" * 60)
+  print("ЛАБОРАТОРНАЯ РАБОТА: ПРОВЕРКА КАЧЕСТВА ГЕНЕРАТОРА ПСЧ")
+  print("=" * 60)
+  print()
+
+  m = 1000
+  a = 37
+  b = 1
+  seed = 38
+  n = 100
+  alpha = 0.05
+
+  print("ПАРАМЕТРЫ ГЕНЕРАТОРА:")
+  print(f"  M = {m}")
+  print(f"  a = {a}")
+  print(f"  b = {b}")
+  print(f"  x0 (затравка, НЕ входит в выборку) = {seed}")
+  print(f"  N (количество чисел) = {n}")
+  print(f"  α (уровень значимости) = {alpha}")
+  print()
+
+  int_sequence = generate_random_sequence(seed, a, b, m, n)
+  print_sequence("СГЕНЕРИРОВАННАЯ ПОСЛЕДОВАТЕЛЬНОСТЬ x_i (начиная с x1):", int_sequence)
+
+  float_sequence = [x / m for x in int_sequence]
+  print_sequence("НОРМИРОВАННАЯ ПОСЛЕДОВАТЕЛЬНОСТЬ u_i = x_i / M:", float_sequence)
+
+  chi_square_test(float_sequence, alpha)
+  median_test(float_sequence, alpha)
+  correlation_test(float_sequence, alpha)
+
+  print("=" * 60)
+  print("РАБОТА ЗАВЕРШЕНА")
+  print("=" * 60)
+
+
+if __name__ == "__main__":
+  main()
