@@ -109,7 +109,7 @@ def chi_square_test(data, alpha=0.05):
     print("КРИТЕРИЙ ХИ-КВАДРАТ ПИРСОНА")
     print("=" * 60)
 
-    # --- 1. Оценки параметров ---
+    # --- 1. Оценки параметров равномерного распределения ---
     mean = sum(data) / n
     variance = sum((x - mean) ** 2 for x in data) / n
     sigma = math.sqrt(variance)
@@ -135,25 +135,24 @@ def chi_square_test(data, alpha=0.05):
     print(f"Число интервалов до объединения s = {len(intervals)}")
     print()
 
-    # --- 3. Объединяем малочисленные частоты ---
+    # --- 3. Объединяем малочисленные частоты (n_i < 5) ---
     intervals, frequencies = merge_small_frequencies(intervals, frequencies, min_freq=5)
     s = len(intervals)
     print(f"Число интервалов после объединения s = {s}")
-
     for i, (start, end) in enumerate(intervals):
         print(f"  Интервал {i + 1}: [{start:.4f}; {end:.4f}]  n_i = {frequencies[i]}")
     print()
 
-    # --- 4. Теоретические частоты по методичке ---
+    # --- 4. Теоретические частоты (для ОБЪЕДИНЁННЫХ интервалов) ---
+    # Через пересечение интервала с [a*, b*] — корректно при любой ширине.
     n_i_theor = []
-    for i, (start, end) in enumerate(intervals):
-        mid = (start + end) / 2.0
-        if i == 0:
-            p = (mid - a_est) / (b_est - a_est)
-        elif i == s - 1:
-            p = (b_est - mid) / (b_est - a_est)
+    for (start, end) in intervals:
+        left = max(start, a_est)
+        right = min(end, b_est)
+        if right <= left:
+            p = 0.0
         else:
-            p = h / (b_est - a_est)
+            p = (right - left) / (b_est - a_est)
         n_i_theor.append(n * p)
 
     print("ТЕОРЕТИЧЕСКИЕ ЧАСТОТЫ:")
