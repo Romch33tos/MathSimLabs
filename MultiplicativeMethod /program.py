@@ -155,15 +155,17 @@ def chi_square_test(data, alpha=0.05):
     mids = [(st + en) / 2.0 for (st, en) in intervals]
     theoretical = []
     theoretical.append(n * (mids[0] - a_est) / (b_est - a_est))
+    
     for i in range(1, s - 1):
         theoretical.append(n * h / (b_est - a_est))
+        
     theoretical.append(n * (b_est - mids[s - 2]) / (b_est - a_est))
 
     print("  Середины интервалов x_i:")
     for i, m in enumerate(mids):
         print(f"    x_{i + 1} = {fmt(m, 6)}")
     print()
-    print("  Формулы (методичка, стр. 3):")
+    print("  Формулы для расчета частот:")
     print("    n1'  = N·(x1 − a*)/(b* − a*)")
     print("    ni'  = N·h/(b* − a*)        для i = 2..s−1")
     print("    ns'  = N·(b* − x_(s−1))/(b* − a*)")
