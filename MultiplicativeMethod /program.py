@@ -64,6 +64,35 @@ def print_sequence_table(title, seq, is_float=False):
     print()
 
 
+def sturges_interval_length(x_max, x_min, n):
+    return (x_max - x_min) / (1 + 3.3221 * math.log10(n))
+
+
+def build_intervals(x_min, x_max, h):
+    num_intervals = int(math.ceil((x_max - x_min) / h))
+    intervals = []
+    start = x_min
+    for i in range(num_intervals):
+        end = start + h
+        if i == num_intervals - 1:
+            end = x_max
+        intervals.append((start, end))
+        start = end
+    return intervals
+
+
+def count_frequencies(data, intervals):
+    frequencies = []
+    last = len(intervals) - 1
+    for i, (start, end) in enumerate(intervals):
+        if i == last:
+            count = sum(1 for v in data if start <= v <= end)
+        else:
+            count = sum(1 for v in data if start <= v < end)
+        frequencies.append(count)
+    return frequencies
+
+
 def main():
     modulus = 1000
     multiplier = 37
