@@ -222,44 +222,7 @@ def chi_square_test(data, alpha=0.05):
   print()
 
 
-def main():
-  modulus = 1000
-  multiplier = 37
-  increment = 1
-  seed = 38
-  count = 100
-  alpha = 0.05
-
-  print_line("=")
-  print("ЗАДАНИЕ 2. Мультипликативный метод генерации псевдослучайных чисел")
-  print_line("=")
-  print("  Формула: x(i+1) = (a·x(i) + b) mod M;  u(i) = x(i) / M")
-  print()
-  print(f"  M = {modulus}")
-  print(f"  a = {multiplier}")
-  print(f"  b = {increment}")
-  print(f"  x1 = {seed}   ← затравка (в выборку НЕ входит)")
-  print(f"  N = {count}")
-  print(f"  α = {alpha}")
-  print()
-
-  integer_sequence = generate_random_sequence(
-    seed, multiplier, increment, modulus, count)
-
-  print_line("=")
-  print("ПОСЛЕДОВАТЕЛЬНОСТЬ ЦЕЛЫХ ЧИСЕЛ x_1 … x_N")
-  print_line("=")
-  print_sequence_table("", integer_sequence, is_float=False)
-
-  float_sequence = [x / modulus for x in integer_sequence]
-
-  print_line("=")
-  print("НОРМИРОВАННАЯ ПОСЛЕДОВАТЕЛЬНОСТЬ u_i = x_i / M ⊂ [0; 1)")
-  print_line("=")
-  print_sequence_table("", float_sequence, is_float=True)
-
-  chi_square_test(float_sequence, alpha)
-
-
-if __name__ == "__main__":
-  main()
+SERIES_CRITICAL_TABLE = {
+  20: {0.99: (5, 15), 0.975: (6, 14), 0.95: (7, 13), 0.05: (7, 13), 0.025: (6, 14), 0.01: (5, 15)},
+  21: {0.99: (5, 16), 0.975: (6, 15), 0.95: (7, 14), 0.05: (8, 15), 0.025: (7, 16), 0.01: (6, 17)},
+  22: {0.99: (6, 17), 0.975: (7, 16), 0.95: (8, 15), 0.
