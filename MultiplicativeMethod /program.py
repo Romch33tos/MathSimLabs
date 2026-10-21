@@ -365,6 +365,29 @@ def series_test(data, alpha=0.05):
   print()
 
 
+def laplace_z_value(alpha):
+  """
+  z_α из условия Ф(z_α) = (1 − α)/2.
+  Используется таблица для типичных α и итерация для остальных.
+  """
+  table = {0.10: 1.6449, 0.05: 1.9600, 0.02: 2.3263, 0.01: 2.5758}
+  if alpha in table:
+    return table[alpha]
+
+  target = (1.0 - alpha) / 2.0
+  z = 1.96
+  for _ in range(100):
+    phi = 0.5 * (1.0 + math.erf(z / math.sqrt(2)))
+    deriv = math.exp(-z * z / 2) / math.sqrt(2 * math.pi)
+    if deriv < 1e-15:
+      break
+    new_z = z - (phi - target) / deriv
+    if abs(new_z - z) < 1e-12:
+      return new_z
+    z = new_z
+  return z
+
+
 def main():
   modulus = 1000
   multiplier = 37
