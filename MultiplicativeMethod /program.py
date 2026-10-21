@@ -388,6 +388,67 @@ def laplace_z_value(alpha):
   return z
 
 
+def independence_test(data, alpha=0.05):
+  n = len(data)
+  print_header("ПРОВЕРКА НЕЗАВИСИМОСТИ (коэффициент корреляции r(x_i, i))")
+
+  print_subheader("ШАГ 1. Промежуточные суммы")
+
+  sum_i = n * (n + 1) / 2.0
+  sum_xi = sum(data)
+  sum_i_xi = sum((i + 1) * v for i, v in enumerate(data))
+  sum_xi_sq = sum(v * v for v in data)
+
+  print(f"  Σi       = N(N+1)/2 = {n}·{n + 1}/2 = {fmt(sum_i, 4)}")
+  print(f"  Σu_i     = {fmt(sum_xi, 6)}")
+  print(f"  Σi·u_i   = {fmt(sum_i_xi, 6)}")
+  print(f"  Σu_i²    = {fmt(sum_xi_sq, 6)}")
+  print()
+
+  mean_i_xi = sum_i_xi / n
+  mean_xi = sum_xi / n
+  mean_xi_sq = sum_xi_sq / n
+  mean_i = (n + 1) / 2.0
+
+  print_subheader("ШАГ 2. Коэффициент корреляции r(x_i, i)")
+
+  numerator = mean_i_xi - mean_xi * mean_i
+  denom_part1 = mean_xi_sq - mean_xi ** 2
+  denom_part2 = (n ** 2 - 1) / 12.0
+  denominator = math.sqrt(denom_part1 * denom_part2)
+  r = numerator / denominator
+
+  print("  r = [ (1/N)Σi·u_i − (1/N)Σu_i·(N+1)/2 ] /")
+  print("      √( [ (1/N)Σu_i² − ((1/N)Σu_i)² ] · (N²−1)/12 )")
+  print()
+  print(f"  Числитель: {fmt(numerator, 6)}")
+  print(f"  Знаменатель: {fmt(denominator, 6)}")
+  print(f"  r = {fmt(r, 6)}")
+  print()
+
+  print_subheader("ШАГ 3. Верхняя граница r_max")
+
+  z_alpha = laplace_z_value(alpha)
+  r_max = z_alpha * (1 - r ** 2) / math.sqrt(n)
+
+  print(f"  Ф(z_α) = (1 − α)/2 = {fmt((1 - alpha) / 2, 4)}")
+  print(f"  z_α = {fmt(z_alpha, 4)}")
+  print(f"  r_max = z_α·(1 − r²)/√N = {fmt(r_max, 6)}")
+  print()
+
+  print_subheader("ШАГ 4. Проверка гипотезы")
+  print(f"  |r| = {fmt(abs(r), 6)}")
+  print(f"  r_max = {fmt(r_max, 6)}")
+  print()
+  if abs(r) <= r_max:
+    print("  |r| ≤ r_max  →  гипотеза о независимости принимается.")
+  else:
+    print("  |r| > r_max  →  гипотеза о независимости отвергается.")
+  print()
+  print_line("=")
+  print()
+
+
 def main():
   modulus = 1000
   multiplier = 37
@@ -426,6 +487,7 @@ def main():
 
   chi_square_test(float_sequence, alpha)
   series_test(float_sequence, alpha)
+  independence_test(float_sequence, alpha)
 
 
 if __name__ == "__main__":
