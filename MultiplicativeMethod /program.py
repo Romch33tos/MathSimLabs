@@ -225,4 +225,185 @@ def chi_square_test(data, alpha=0.05):
 SERIES_CRITICAL_TABLE = {
   20: {0.99: (5, 15), 0.975: (6, 14), 0.95: (7, 13), 0.05: (7, 13), 0.025: (6, 14), 0.01: (5, 15)},
   21: {0.99: (5, 16), 0.975: (6, 15), 0.95: (7, 14), 0.05: (8, 15), 0.025: (7, 16), 0.01: (6, 17)},
-  22: {0.99: (6, 17), 0.975: (7, 16), 0.95: (8, 15), 0.
+  22: {0.99: (6, 17), 0.975: (7, 16), 0.95: (8, 15), 0.05: (8, 15), 0.025: (7, 16), 0.01: (6, 17)},
+  23: {0.99: (6, 18), 0.975: (7, 17), 0.95: (8, 16), 0.05: (8, 16), 0.025: (7, 17), 0.01: (6, 18)},
+  24: {0.99: (7, 18), 0.975: (8, 17), 0.95: (9, 16), 0.05: (9, 16), 0.025: (8, 17), 0.01: (7, 18)},
+  25: {0.99: (7, 19), 0.975: (8, 18), 0.95: (9, 17), 0.05: (9, 17), 0.025: (8, 18), 0.01: (7, 19)},
+  26: {0.99: (8, 19), 0.975: (9, 18), 0.95: (10, 17), 0.05: (10, 17), 0.025: (9, 18), 0.01: (8, 19)},
+  27: {0.99: (8, 20), 0.975: (9, 19), 0.95: (10, 18), 0.05: (10, 18), 0.025: (9, 19), 0.01: (8, 20)},
+  28: {0.99: (9, 20), 0.975: (10, 19), 0.95: (11, 18), 0.05: (11, 18), 0.025: (10, 19), 0.01: (9, 20)},
+  29: {0.99: (9, 21), 0.975: (10, 20), 0.95: (11, 19), 0.05: (11, 19), 0.025: (10, 20), 0.01: (9, 21)},
+  30: {0.99: (10, 21), 0.975: (11, 20), 0.95: (12, 19), 0.05: (12, 19), 0.025: (11, 20), 0.01: (10, 21)},
+  40: {0.99: (22, 58), 0.975: (24, 56), 0.95: (25, 55), 0.05: (25, 55), 0.025: (24, 56), 0.01: (22, 58)},
+  45: {0.99: (27, 63), 0.975: (28, 62), 0.95: (29, 61), 0.05: (29, 61), 0.025: (28, 62), 0.01: (27, 63)},
+  50: {0.99: (32, 68), 0.975: (40, 61), 0.95: (41, 60), 0.05: (41, 60), 0.025: (40, 61), 0.01: (32, 68)},
+}
+
+
+def find_series_critical_values(n, alpha):
+  """
+  Возвращает (lower, upper, chosen_half, key_low, key_high).
+  lower — квантиль уровня 1 − α/2 (нижняя граница)
+  upper — квантиль уровня α/2     (верхняя граница)
+  """
+  half_n = n // 2
+  available = sorted(SERIES_CRITICAL_TABLE.keys())
+  chosen = available[0]
+  for key in available:
+    if key <= half_n:
+      chosen = key
+
+  row = SERIES_CRITICAL_TABLE[chosen]
+  alpha_keys = sorted(row.keys())
+
+  target_low = 1.0 - alpha / 2.0    # например 0.975
+  target_high = alpha / 2.0          # например 0.025
+
+  # нижняя граница: наибольший ключ <= target_low
+  key_low = alpha_keys[0]
+  for a in alpha_keys:
+    if a <= target_low:
+      key_low = a
+
+  # верхняя граница: наименьший ключ >= target_high
+  key_high = alpha_keys[-1]
+  for a in alpha_keys:
+    if a >= target_high:
+      key_high = a
+      break
+
+  lower = row[key_low][0]
+  upper = row[key_high][1]
+  return lower, upper, chosen, key_low, key_high
+
+
+def series_test(data, alpha=0.05):
+  n = len(data)
+  print_header("КРИТЕРИЙ СЕРИЙ (проверка случайности последовательности)")
+
+  print_subheader("ШАГ 1. Вариационный ряд и выборочная медиана")
+
+  sorted_data = sorted(data)
+  print("  Вариационный ряд: x_(1) ≤ x_(2) ≤ … ≤ x_(N)")
+  print()
+  columns = 5
+  sep = "  +" + "-" * 8 + "+" + ("-" * 10 + "+") * columns
+  print(sep)
+  header = "  |{:^8}|".format("i")
+  for j in range(columns):
+    header += "{:^10}|".format(f"x({j + 1})")
+  print(header)
+  print(sep)
+  rows = (n + columns - 1) // columns
+  for row in range(rows):
+    line = "  |{:^8}|".format(row * columns + 1)
+    for col in range(columns):
+      idx = row * columns + col
+      if idx < n:
+        line += "{:^10}|".format(fmt(sorted_data[idx], 4))
+      else:
+        line += "{:^10}|".format("")
+    print(line)
+  print(sep)
+  print()
+
+  left = sorted_data[n // 2 - 1]
+  right = sorted_data[n // 2]
+  median = 0.5 * (left + right)
+  print(f"  N = {n} — чётное")
+  print(f"  med = (x_(N/2) + x_(N/2+1)) / 2 = "
+        f"({fmt(left, 6)} + {fmt(right, 6)}) / 2 = {fmt(median, 6)}")
+  print()
+
+  print_subheader("ШАГ 2. Последовательность знаков")
+
+  signs = ["+" if v >= median else "−" for v in data]
+  print("  Правило: u_i ≥ med → «+»; иначе → «−»")
+  print()
+
+  chunk_size = 50
+  sep = "  +" + "-" * 12 + "+" + "-" * chunk_size + "+"
+  print(sep)
+  print("  |{:^12}|{:^50}|".format("i", "Знаки"))
+  print(sep)
+  for i in range(0, n, chunk_size):
+    chunk = signs[i:i + chunk_size]
+    label = f"{i + 1}–{i + len(chunk)}"
+    print("  |{:^12}|{:^50}|".format(label, "".join(chunk)))
+  print(sep)
+  print(f"  «+»: {signs.count('+')},  «−»: {signs.count('−')}")
+  print()
+
+  print_subheader("ШАГ 3. Подсчёт числа серий")
+
+  series_count = 1
+  for i in range(1, n):
+    if signs[i] != signs[i - 1]:
+      series_count += 1
+
+  print(f"  S = {series_count}")
+  print()
+
+  print_subheader("ШАГ 4. Критические значения распределения серий")
+
+  lower, upper, chosen_half, key_low, key_high = find_series_critical_values(n, alpha)
+  print(f"  N/2 = {chosen_half}")
+  print(f"  S(N/2; {fmt(key_low, 4)}) = {lower}")
+  print(f"  S(N/2; {fmt(key_high, 4)}) = {upper}")
+  print()
+
+  print_subheader("ШАГ 5. Проверка гипотезы")
+  print(f"  Условие: {lower} < S < {upper}")
+  print(f"  Проверка: {lower} < {series_count} < {upper}")
+  print()
+  if lower < series_count < upper:
+    print("  Условие выполнено  →  гипотеза о случайности принимается.")
+  else:
+    print("  Условие НЕ выполнено  →  гипотеза о случайности отвергается.")
+  print()
+  print_line("=")
+  print()
+
+
+def main():
+  modulus = 1000
+  multiplier = 37
+  increment = 1
+  seed = 38
+  count = 100
+  alpha = 0.05
+
+  print_line("=")
+  print("ЗАДАНИЕ 2. Мультипликативный метод генерации псевдослучайных чисел")
+  print_line("=")
+  print("  Формула: x(i+1) = (a·x(i) + b) mod M;  u(i) = x(i) / M")
+  print()
+  print(f"  M = {modulus}")
+  print(f"  a = {multiplier}")
+  print(f"  b = {increment}")
+  print(f"  x1 = {seed}   ← затравка (в выборку НЕ входит)")
+  print(f"  N = {count}")
+  print(f"  α = {alpha}")
+  print()
+
+  integer_sequence = generate_random_sequence(
+    seed, multiplier, increment, modulus, count)
+
+  print_line("=")
+  print("ПОСЛЕДОВАТЕЛЬНОСТЬ ЦЕЛЫХ ЧИСЕЛ x_1 … x_N")
+  print_line("=")
+  print_sequence_table("", integer_sequence, is_float=False)
+
+  float_sequence = [x / modulus for x in integer_sequence]
+
+  print_line("=")
+  print("НОРМИРОВАННАЯ ПОСЛЕДОВАТЕЛЬНОСТЬ u_i = x_i / M ⊂ [0; 1)")
+  print_line("=")
+  print_sequence_table("", float_sequence, is_float=True)
+
+  chi_square_test(float_sequence, alpha)
+  series_test(float_sequence, alpha)
+
+
+if __name__ == "__main__":
+  main()
