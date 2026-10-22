@@ -142,3 +142,27 @@ def merge_small(intervals, emp, theo, min_freq=5):
         break
   return intervals, emp, theo
 
+def print_freq_table(intervals, mids, emp, theo):
+  """Печатает таблицу частот с вкладами в хи-квадрат."""
+  sep = ("  +" + "-" * 4 + "+" + "-" * 22 + "+" + "-" * 14 + "+" +
+         "-" * 8 + "+" + "-" * 12 + "+" + "-" * 20 + "+")
+  print(sep)
+  print("  |{:^4}|{:^22}|{:^14}|{:^8}|{:^12}|{:^20}|".format(
+    "№", "Интервал", "Середина x_i", "n_i", "n_i'", "(n_i−n_i')²/n_i'"))
+  print(sep)
+  s = len(intervals)
+  chi2_obs = 0.0
+  for i in range(s):
+    bracket = "]" if i == s - 1 else ")"
+    interval_str = f"[{fmt(intervals[i][0])}; {fmt(intervals[i][1])}{bracket}"
+    term = ((emp[i] - theo[i]) ** 2 / theo[i]) if theo[i] > 0 else 0.0
+    chi2_obs += term
+    print("  |{:^4}|{:^22}|{:^14}|{:^8}|{:^12}|{:^20}|".format(
+      i + 1, interval_str, fmt(mids[i], 6), emp[i],
+      fmt(theo[i], 4), fmt(term, 4)))
+  print(sep)
+  print("  |{:^4}|{:^22}|{:^14}|{:^8}|{:^12}|{:^20}|".format(
+    "Σ", "", "", sum(emp), fmt(sum(theo), 4), fmt(chi2_obs, 4)))
+  print(sep)
+  print()
+  return chi2_obs
