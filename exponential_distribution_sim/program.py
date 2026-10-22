@@ -90,3 +90,18 @@ def count_frequencies(data, intervals):
       cnt = sum(1 for v in data if a <= v < b)
     freqs.append(cnt)
   return freqs
+
+def laplace_phi(z):
+  return 0.5 * math.erf(z / math.sqrt(2.0))
+
+
+def normal_cdf(x, mean, sigma):
+  return 0.5 + laplace_phi((x - mean) / sigma)
+
+
+def chi2_critical(alpha, df):
+  z_table = {0.10: 1.2816, 0.05: 1.6449, 0.025: 1.9600,
+             0.01: 2.3263, 0.005: 2.5758, 0.001: 3.0902}
+  z = z_table.get(alpha, 1.6449)
+  term = 1 - 2.0 / (9 * df) + z * math.sqrt(2.0 / (9 * df))
+  return df * term ** 3
