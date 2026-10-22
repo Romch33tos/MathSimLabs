@@ -54,3 +54,13 @@ def print_sequence_table(title, seq, is_float=True):
     print(line)
   print(sep)
   print()
+
+def sample_mean(data):
+  return sum(data) / len(data)
+
+
+def sample_variance(data):
+  n = len(data)
+  m = sample_mean(data)
+  return sum((x - m) ** 2 for x in data) / (n - 1)
+
