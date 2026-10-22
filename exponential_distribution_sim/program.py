@@ -64,3 +64,29 @@ def sample_variance(data):
   m = sample_mean(data)
   return sum((x - m) ** 2 for x in data) / (n - 1)
 
+def sturges_k(n):
+  return int(round(1 + 3.3221 * math.log10(n)))
+
+
+def build_intervals(x_min, x_max, k):
+  h = (x_max - x_min) / k
+  intervals = []
+  for i in range(k):
+    a = x_min + i * h
+    b = x_min + (i + 1) * h
+    if i == k - 1:
+      b = x_max
+    intervals.append((a, b))
+  return intervals
+
+
+def count_frequencies(data, intervals):
+  freqs = []
+  last = len(intervals) - 1
+  for i, (a, b) in enumerate(intervals):
+    if i == last:
+      cnt = sum(1 for v in data if a <= v <= b)
+    else:
+      cnt = sum(1 for v in data if a <= v < b)
+    freqs.append(cnt)
+  return freqs
