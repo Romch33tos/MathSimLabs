@@ -273,3 +273,29 @@ def model_exponential(n=100, lam=0.1, seed=42, alpha=0.05):
   print()
   print_line("=")
   print()
+
+# =========================================================
+# ШАГ 2–3. НОРМАЛЬНОЕ РАСПРЕДЕЛЕНИЕ
+# =========================================================
+
+def generate_clt(n, mean, sigma, seed):
+  random.seed(seed)
+  data = []
+  for _ in range(n):
+    s = sum(random.random() for _ in range(12))
+    z = s - 6.0
+    data.append(mean + sigma * z)
+  return data
+
+
+def generate_muller(n, mean, sigma, seed):
+  random.seed(seed)
+  data = []
+  for _ in range(n):
+    r1 = random.random()
+    while r1 == 0.0:
+      r1 = random.random()
+    r2 = random.random()
+    z = math.sqrt(-2.0 * math.log(r1)) * math.cos(2.0 * math.pi * r2)
+    data.append(mean + sigma * z)
+  return data
