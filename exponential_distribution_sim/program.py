@@ -115,3 +115,65 @@ def chi2_critical(alpha, df):
   z = z_table.get(alpha, 1.6449)
   term = 1 - 2.0 / (9 * df) + z * math.sqrt(2.0 / (9 * df))
   return df * term ** 3
+
+def merge_small(intervals, emp, theo, min_freq=5):
+  """Объединяет малочисленные интервалы с соседними."""
+  intervals = list(intervals)
+  emp = list(emp)
+  theo = list(theo)
+  changed = True
+  while changed and len(intervals) > 2:
+    changed = False
+    for i in range(len(intervals)):
+      if emp[i] < min_freq or theo[i] < min_freq:
+        if i == 0:
+          j = 1
+        elif i == len(intervals) - 1:
+          j = i - 1
+        else:
+          if emp[i - 1] + theo[i - 1] <= emp[i + 1] + theo[i + 1]:
+            j = i - 1
+          else:
+            j = i + 1
+        a = min(intervals[i][0], intervals[j][0])
+        b = max(intervals[i][1], intervals[j][1])
+        new_i = (a, b)
+        new_e = emp[i] + emp[j]
+        new_t = theo[i] + theo[j]
+        for idx in sorted([i, j], reverse=True):
+          intervals.pop(idx)
+          emp.pop(idx)
+          theo.pop(idx)
+        pos = min(i, j)
+        intervals.insert(pos, new_i)
+        emp.insert(pos, new_e)
+        theo.insert(pos, new_t)
+        changed = True
+        break
+  return intervals, emp, theo
+
+
+def print_freq_table(intervals, mids, emp, theo):
+  """Печатает таблицу частот с вкладами в хи-квадрат."""
+  sep = ("  +" + "-" * 4 + "+" + "-" * 22 + "+" + "-" * 14 + "+" +
+         "-" * 8 + "+" + "-" * 12 + "+" + "-" * 20 + "+")
+  print(sep)
+  print("  |{:^4}|{:^22}|{:^14}|{:^8}|{:^12}|{:^20}|".format(
+    "№", "Интервал", "Середина x_i", "n_i", "n_i'", "(n_i−n_i')²/n_i'"))
+  print(sep)
+  s = len(intervals)
+  chi2_obs = 0.0
+  for i in range(s):
+    bracket = "]" if i == s - 1 else ")"
+    interval_str = f"[{fmt(intervals[i][0])}; {fmt(intervals[i][1])}{bracket}"
+    term = ((emp[i] - theo[i]) ** 2 / theo[i]) if theo[i] > 0 else 0.0
+    chi2_obs += term
+    print("  |{:^4}|{:^22}|{:^14}|{:^8}|{:^12}|{:^20}|".format(
+      i + 1, interval_str, fmt(mids[i], 6), emp[i],
+      fmt(theo[i], 4), fmt(term, 4)))
+  print(sep)
+  print("  |{:^4}|{:^22}|{:^14}|{:^8}|{:^12}|{:^20}|".format(
+    "Σ", "", "", sum(emp), fmt(sum(theo), 4), fmt(chi2_obs, 4)))
+  print(sep)
+  print()
+  return chi2_obs
