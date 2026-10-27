@@ -1,11 +1,6 @@
 import math
 import random
 
-
-# =========================================================
-# ФОРМАТИРОВАНИЕ И ПЕЧАТЬ (стиль как в образце)
-# =========================================================
-
 def fmt(value, digits=4):
   if value == 0:
     return "0"
@@ -15,25 +10,20 @@ def fmt(value, digits=4):
     s = "0"
   return s
 
-
 def print_line(char="-", length=78):
   print(char * length)
-
 
 def print_header(title):
   print_line("=")
   print(title)
   print_line("=")
 
-
 def print_subheader(title):
   print_line("-")
   print(title)
   print_line("-")
 
-
 def print_sequence_table(title, seq, is_float=True):
-  """Печатает последовательность в таблицу 5 столбцов по 20 строк."""
   if title:
     print(title)
   columns = 5
@@ -60,23 +50,16 @@ def print_sequence_table(title, seq, is_float=True):
   print(sep)
   print()
 
-# =========================================================
-# ОБЩИЕ СТАТИСТИЧЕСКИЕ ФУНКЦИИ
-# =========================================================
-
 def sample_mean(data):
   return sum(data) / len(data)
-
 
 def sample_variance(data):
   n = len(data)
   m = sample_mean(data)
   return sum((x - m) ** 2 for x in data) / (n - 1)
 
-
 def sturges_k(n):
   return int(round(1 + 3.3221 * math.log10(n)))
-
 
 def build_intervals(x_min, x_max, k):
   h = (x_max - x_min) / k
@@ -88,7 +71,6 @@ def build_intervals(x_min, x_max, k):
       b = x_max
     intervals.append((a, b))
   return intervals
-
 
 def count_frequencies(data, intervals):
   freqs = []
@@ -104,10 +86,8 @@ def count_frequencies(data, intervals):
 def laplace_phi(z):
   return 0.5 * math.erf(z / math.sqrt(2.0))
 
-
 def normal_cdf(x, mean, sigma):
   return 0.5 + laplace_phi((x - mean) / sigma)
-
 
 def chi2_critical(alpha, df):
   z_table = {0.10: 1.2816, 0.05: 1.6449, 0.025: 1.9600,
@@ -117,7 +97,6 @@ def chi2_critical(alpha, df):
   return df * term ** 3
 
 def merge_small(intervals, emp, theo, min_freq=5):
-  """Объединяет малочисленные интервалы с соседними."""
   intervals = list(intervals)
   emp = list(emp)
   theo = list(theo)
@@ -152,9 +131,7 @@ def merge_small(intervals, emp, theo, min_freq=5):
         break
   return intervals, emp, theo
 
-
 def print_freq_table(intervals, mids, emp, theo):
-  """Печатает таблицу частот с вкладами в хи-квадрат."""
   sep = ("  +" + "-" * 4 + "+" + "-" * 22 + "+" + "-" * 14 + "+" +
          "-" * 8 + "+" + "-" * 12 + "+" + "-" * 20 + "+")
   print(sep)
@@ -177,10 +154,6 @@ def print_freq_table(intervals, mids, emp, theo):
   print(sep)
   print()
   return chi2_obs
-
-# =========================================================
-# ШАГ 1. ЭКСПОНЕНЦИАЛЬНОЕ РАСПРЕДЕЛЕНИЕ
-# =========================================================
 
 def model_exponential(n=100, lam=0.1, seed=42, alpha=0.05):
   print_header("ШАГ 1. МОДЕЛИРОВАНИЕ ЭКСПОНЕНЦИАЛЬНО РАСПРЕДЕЛЁННОЙ СВ")
@@ -246,7 +219,6 @@ def model_exponential(n=100, lam=0.1, seed=42, alpha=0.05):
     p = math.exp(-lam_hat * a) - math.exp(-lam_hat * b)
     theo.append(n * p)
 
-  # нормировка теоретических частот на n
   scale = n / sum(theo)
   theo = [t * scale for t in theo]
 
@@ -274,10 +246,6 @@ def model_exponential(n=100, lam=0.1, seed=42, alpha=0.05):
   print_line("=")
   print()
 
-# =========================================================
-# ШАГ 2–3. НОРМАЛЬНОЕ РАСПРЕДЕЛЕНИЕ
-# =========================================================
-
 def generate_clt(n, mean, sigma, seed):
   random.seed(seed)
   data = []
@@ -286,7 +254,6 @@ def generate_clt(n, mean, sigma, seed):
     z = s - 6.0
     data.append(mean + sigma * z)
   return data
-
 
 def generate_muller(n, mean, sigma, seed):
   random.seed(seed)
@@ -316,7 +283,6 @@ def print_normal_estimates(data, mean, sigma):
     "СКО σ", fmt(sigma, 4), fmt(s, 6), fmt(abs(s - sigma), 6)))
   print(sep)
   print()
-
 
 def print_pearson_normal(data, mean, sigma, alpha=0.05):
   n = len(data)
@@ -416,7 +382,6 @@ def print_ks_normal(data, mean, sigma):
     print("  λ > λ_кр → гипотеза H0 о нормальном распределении ОТВЕРГАЕТСЯ.")
   print()
 
-
 def run_normal_block(title, data, mean, sigma, alpha=0.05):
   print_header(title)
   print_subheader("Все 100 смоделированных значений x_j")
@@ -427,17 +392,11 @@ def run_normal_block(title, data, mean, sigma, alpha=0.05):
   print_line("=")
   print()
 
-# =========================================================
-# MAIN
-# =========================================================
-
 def main():
   alpha = 0.05
 
-  # ШАГ 1
   model_exponential(n=100, lam=0.1, seed=42, alpha=alpha)
 
-  # ШАГ 2–3
   m = 3.0
   sigma = 0.25
 
