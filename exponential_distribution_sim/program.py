@@ -177,3 +177,99 @@ def print_freq_table(intervals, mids, emp, theo):
   print(sep)
   print()
   return chi2_obs
+
+# =========================================================
+# ШАГ 1. ЭКСПОНЕНЦИАЛЬНОЕ РАСПРЕДЕЛЕНИЕ
+# =========================================================
+
+def model_exponential(n=100, lam=0.1, seed=42, alpha=0.05):
+  print_header("ШАГ 1. МОДЕЛИРОВАНИЕ ЭКСПОНЕНЦИАЛЬНО РАСПРЕДЕЛЁННОЙ СВ")
+
+  random.seed(seed)
+  data = []
+  for _ in range(n):
+    r = random.random()
+    while r == 0.0:
+      r = random.random()
+    x = -(1.0 / lam) * math.log(r)
+    data.append(x)
+
+  print_subheader("1.1. Исходные параметры")
+  print(f"  N = {n}")
+  print(f"  λ = {fmt(lam, 4)}")
+  print(f"  seed = {seed}")
+  print("  Формула метода обратной функции: x_i = −(1/λ)·ln(r_i) = −10·ln(r_i)")
+  print()
+
+  print_subheader("1.2. Все 100 смоделированных значений x_i")
+  print_sequence_table("", data, is_float=True)
+
+  mean_emp = sample_mean(data)
+  var_emp = sample_variance(data)
+  mean_theory = 1.0 / lam
+  var_theory = 1.0 / (lam ** 2)
+
+  print_subheader("1.3. Теоретические и выборочные характеристики")
+  sep = "  +" + "-" * 26 + "+" + "-" * 14 + "+" + "-" * 14 + "+" + "-" * 18 + "+"
+  print(sep)
+  print("  |{:^26}|{:^14}|{:^14}|{:^18}|".format(
+    "Характеристика", "Теория", "Выборка", "Абс. погрешность"))
+  print(sep)
+  print("  |{:^26}|{:^14}|{:^14}|{:^18}|".format(
+    "Математическое ожидание", fmt(mean_theory, 4),
+    fmt(mean_emp, 6), fmt(abs(mean_emp - mean_theory), 6)))
+  print("  |{:^26}|{:^14}|{:^14}|{:^18}|".format(
+    "Дисперсия", fmt(var_theory, 4),
+    fmt(var_emp, 6), fmt(abs(var_emp - var_theory), 6)))
+  print(sep)
+  print()
+
+  print_subheader("1.4. Критерий Пирсона (показательное распределение)")
+  k = sturges_k(n)
+  print(f"  k = 1 + 3.3221·lg(N) = {fmt(1 + 3.3221 * math.log10(n), 4)} ≈ {k}")
+  x_min = min(data)
+  x_max = max(data)
+  h = (x_max - x_min) / k
+  print(f"  h = (x_max − x_min)/k = ({fmt(x_max, 4)} − {fmt(x_min, 4)})/{k} = {fmt(h, 6)}")
+  print()
+
+  intervals = build_intervals(x_min, x_max, k)
+  emp = count_frequencies(data, intervals)
+  mids = [(a + b) / 2.0 for a, b in intervals]
+
+  lam_hat = 1.0 / mean_emp
+  print(f"  Оценка λ: λ* = 1/x̄ = {fmt(lam_hat, 6)}")
+  print()
+
+  theo = []
+  for a, b in intervals:
+    p = math.exp(-lam_hat * a) - math.exp(-lam_hat * b)
+    theo.append(n * p)
+
+  # нормировка теоретических частот на n
+  scale = n / sum(theo)
+  theo = [t * scale for t in theo]
+
+  print("  Таблица ДО объединения малочисленных частот:")
+  print_freq_table(intervals, mids, emp, theo)
+
+  intervals2, emp2, theo2 = merge_small(intervals, emp, theo, 5)
+  mids2 = [(a + b) / 2.0 for a, b in intervals2]
+
+  print("  Таблица ПОСЛЕ объединения малочисленных частот:")
+  chi2_obs = print_freq_table(intervals2, mids2, emp2, theo2)
+
+  df = len(intervals2) - 2
+  chi2_cr = chi2_critical(alpha, df)
+  print(f"  Число степеней свободы: k − 2 = {len(intervals2)} − 2 = {df}")
+  print(f"  α = {alpha}")
+  print(f"  χ²_кр(α; {df}) = {fmt(chi2_cr, 4)}")
+  print(f"  χ²_набл = {fmt(chi2_obs, 4)}")
+  print()
+  if chi2_obs < chi2_cr:
+    print("  χ²_набл < χ²_кр → гипотеза о показательном распределении НЕ отвергается.")
+  else:
+    print("  χ²_набл > χ²_кр → гипотеза о показательном распределении ОТВЕРГАЕТСЯ.")
+  print()
+  print_line("=")
+  print()
