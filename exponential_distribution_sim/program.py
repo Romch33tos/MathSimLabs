@@ -426,3 +426,29 @@ def run_normal_block(title, data, mean, sigma, alpha=0.05):
   print_ks_normal(data, mean, sigma)
   print_line("=")
   print()
+
+# =========================================================
+# MAIN
+# =========================================================
+
+def main():
+  alpha = 0.05
+
+  # ШАГ 1
+  model_exponential(n=100, lam=0.1, seed=42, alpha=alpha)
+
+  # ШАГ 2–3
+  m = 3.0
+  sigma = 0.25
+
+  data_clt = generate_clt(100, m, sigma, seed=42)
+  run_normal_block("ШАГ 2–3. МЕТОД ЦПТ: z = Σr_i − 6, x = m + σz",
+                   data_clt, m, sigma, alpha)
+
+  data_muller = generate_muller(100, m, sigma, seed=42)
+  run_normal_block("ШАГ 2–3. МЕТОД МЮЛЛЕРА: z = √(−2ln r₁)·cos(2πr₂), x = m + σz",
+                   data_muller, m, sigma, alpha)
+
+
+if __name__ == "__main__":
+  main()
