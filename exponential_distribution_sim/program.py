@@ -369,3 +369,60 @@ def print_pearson_normal(data, mean, sigma, alpha=0.05):
   else:
     print("  χ²_набл > χ²_кр → гипотеза о нормальном распределении ОТВЕРГАЕТСЯ.")
   print()
+
+def print_ks_normal(data, mean, sigma):
+  n = len(data)
+  print_subheader("Критерий Колмогорова–Смирнова (нормальное распределение)")
+  k = sturges_k(n)
+  x_min = min(data)
+  x_max = max(data)
+  intervals = build_intervals(x_min, x_max, k)
+  emp = count_frequencies(data, intervals)
+  mids = [(a + b) / 2.0 for a, b in intervals]
+  x_bar_mid = sum(ni * mi for ni, mi in zip(emp, mids)) / n
+  print(f"  x̄ по серединам = {fmt(x_bar_mid, 6)}")
+  print()
+
+  sep = ("  +" + "-" * 14 + "+" + "-" * 6 + "+" + "-" * 10 + "+" +
+         "-" * 12 + "+" + "-" * 14 + "+" + "-" * 20 + "+")
+  print(sep)
+  print("  |{:^14}|{:^6}|{:^10}|{:^12}|{:^14}|{:^20}|".format(
+    "x_i (сер.)", "n_i", "n_нак", "F_n(x)", "F(x)", "|F_n(x) − F(x)|"))
+  print(sep)
+
+  cum = 0
+  d_max = 0.0
+  for i in range(len(intervals)):
+    cum += emp[i]
+    fn = cum / n
+    fx = normal_cdf(mids[i], x_bar_mid, sigma)
+    d = abs(fn - fx)
+    if d > d_max:
+      d_max = d
+    print("  |{:^14}|{:^6}|{:^10}|{:^12}|{:^14}|{:^20}|".format(
+      fmt(mids[i], 4), emp[i], cum, fmt(fn, 4), fmt(fx, 4), fmt(d, 4)))
+  print(sep)
+  print()
+
+  lam_ks = d_max * math.sqrt(n)
+  lam_cr = 1.36
+  print(f"  D_max = {fmt(d_max, 6)}")
+  print(f"  λ = D_max·√N = {fmt(d_max, 6)}·√{n} = {fmt(lam_ks, 6)}")
+  print(f"  λ_кр (α = 0.05) = {fmt(lam_cr, 4)}")
+  print()
+  if lam_ks < lam_cr:
+    print("  λ < λ_кр → гипотеза H0 о нормальном распределении НЕ противоречит данным.")
+  else:
+    print("  λ > λ_кр → гипотеза H0 о нормальном распределении ОТВЕРГАЕТСЯ.")
+  print()
+
+
+def run_normal_block(title, data, mean, sigma, alpha=0.05):
+  print_header(title)
+  print_subheader("Все 100 смоделированных значений x_j")
+  print_sequence_table("", data, is_float=True)
+  print_normal_estimates(data, mean, sigma)
+  print_pearson_normal(data, mean, sigma, alpha)
+  print_ks_normal(data, mean, sigma)
+  print_line("=")
+  print()
