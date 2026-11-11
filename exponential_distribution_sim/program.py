@@ -71,18 +71,6 @@ def sturges_k(n):
   return int(round(1 + 3.3221 * math.log10(n)))
 
 
-def build_intervals(x_min, x_max, k):
-  h = (x_max - x_min) / k
-  intervals = []
-  for i in range(k):
-    a = x_min + i * h
-    b = x_min + (i + 1) * h
-    if i == k - 1:
-      b = x_max
-    intervals.append((a, b))
-  return intervals
-
-
 def build_open_intervals(x_min, x_max, k):
   h = (x_max - x_min) / k
   intervals = []
@@ -222,17 +210,15 @@ def mids_from_intervals(intervals):
   return mids
 
 
-def model_exponential(n=100, lam=0.1, seed=42, alpha=0.05):
+def model_exponential(n=100, lam=0.1, alpha=0.05):
   print_header("ШАГ 1. МОДЕЛИРОВАНИЕ ЭКСПОНЕНЦИАЛЬНО РАСПРЕДЕЛЁННОЙ СВ")
 
-  rng = random.Random(seed)
-  data = [rng.expovariate(lam) for _ in range(n)]
+  data = [random.expovariate(lam) for _ in range(n)]
 
   print_subheader("1.1. Исходные параметры")
   print(f"  N = {n}")
   print(f"  λ = {fmt(lam, 4)}")
-  print(f"  seed = {seed}")
-  print("  Стандартный генератор: random.expovariate(λ) (модуль random)")
+  print("  Стандартный генератор: random.expovariate(λ) из модуля random")
   print()
 
   print_subheader("1.2. Все 100 смоделированных значений x_i")
@@ -319,19 +305,17 @@ def model_exponential(n=100, lam=0.1, seed=42, alpha=0.05):
   print()
 
 
-def generate_clt(n, mean, sigma, seed):
-  rng = random.Random(seed)
+def generate_clt(n, mean, sigma):
   data = []
   for _ in range(n):
-    s = sum(rng.random() for _ in range(12))
+    s = sum(random.random() for _ in range(12))
     data.append(mean + sigma * (s - 6.0))
   return data
 
 
-def generate_muller(n, mean, sigma, seed):
-  rng = random.Random(seed)
+def generate_muller(n, mean, sigma):
   nd = NormalDist(mu=mean, sigma=sigma)
-  return [nd.inv_cdf(rng.random()) for _ in range(n)]
+  return [nd.inv_cdf(random.random()) for _ in range(n)]
 
 
 def print_normal_estimates(data, mean, sigma):
@@ -475,17 +459,17 @@ def run_normal_block(title, data, mean, sigma, alpha=0.05):
 
 def main():
   alpha = 0.05
-  model_exponential(n=100, lam=0.1, seed=42, alpha=alpha)
+  model_exponential(n=100, lam=0.1, alpha=alpha)
 
   m = 3.0
   sigma = 0.25
 
-  data_clt = generate_clt(100, m, sigma, seed=42)
+  data_clt = generate_clt(100, m, sigma)
   run_normal_block("ШАГ 2–3. МЕТОД ЦПТ: z = Σr_i − 6, x = m + σz",
                    data_clt, m, sigma, alpha)
 
-  data_muller = generate_muller(100, m, sigma, seed=42)
-  run_normal_block("ШАГ 2–3. МЕТОД ОБРАТНОЙ ФУНКЦИИ: statistics.NormalDist",
+  data_muller = generate_muller(100, m, sigma)
+  run_normal_block("ШАГ 2–3. МЕТОД ОБРАТНОЙ ФУНКЦИИ:",
                    data_muller, m, sigma, alpha)
 
 
