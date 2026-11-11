@@ -288,11 +288,15 @@ def model_exponential(n=100, lam=0.1, seed=42, alpha=0.05):
         return 1.0 - math.exp(-lam_hat * x)
 
     theo = []
+    probs = []
     for a, b in intervals:
         p = exp_cdf(b) - exp_cdf(a)
+        probs.append(p)
         theo.append(n * p)
 
-    print(f"  Сумма теоретических вероятностей: Σp = {fmt(sum(p for p in [exp_cdf(b) - exp_cdf(a) for a, b in intervals]), 6)}")
+    print("  Вероятности по интервалам:")
+    print("  " + "  ".join(fmt(p, 6) for p in probs))
+    print(f"  Сумма теоретических вероятностей: Σp = {fmt(sum(probs), 6)}")
     print()
 
     print("  Таблица ДО объединения малочисленных частот:")
@@ -390,12 +394,15 @@ def print_pearson_normal(data, mean, sigma, alpha=0.05):
         return normal_cdf(x, x_bar, s_hat)
 
     theo = []
+    probs = []
     for a, b in intervals:
         p = norm_cdf_emp(b) - norm_cdf_emp(a)
+        probs.append(p)
         theo.append(n * p)
 
-    print(f"  Сумма теоретических вероятностей: Σp = "
-          f"{fmt(sum(norm_cdf_emp(b) - norm_cdf_emp(a) for a, b in intervals), 6)}")
+    print("  Вероятности по интервалам:")
+    print("  " + "  ".join(fmt(p, 6) for p in probs))
+    print(f"  Сумма теоретических вероятностей: Σp = {fmt(sum(probs), 6)}")
     print()
 
     print("  Таблица ДО объединения малочисленных частот:")
