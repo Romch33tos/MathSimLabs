@@ -261,3 +261,77 @@ def task_2_monte_carlo(analytical_probability, n_experiments=100, seed=7):
 def run_task_2():
   analytical_2 = task_2_analytical()
   task_2_monte_carlo(analytical_2, n_experiments=100)
+
+def task_3_optimal_servers(n_trials=1000, seed=123):
+  print_header("ЗАДАЧА 3. ОПТИМАЛЬНОЕ ЧИСЛО ОБЛАЧНЫХ СЕРВЕРОВ")
+
+  print_step(1, "Исходные параметры")
+  revenue_per_server = 4.00
+  reservation_cost = 1.50
+  refund_per_unused = 0.20
+  print_indented(f"Доход с сервера: {fmt(revenue_per_server, 2)} у.е.")
+  print_indented(f"Стоимость резервирования: {fmt(reservation_cost, 2)} у.е.")
+  print_indented(f"Возврат за лишний сервер: {fmt(refund_per_unused, 2)} у.е.")
+  print()
+
+  print_step(2, "Распределение спроса")
+  demand_values = [10000, 20000, 40000, 60000]
+  demand_probabilities = [0.10, 0.35, 0.30, 0.25]
+  rows = []
+  for d, p in zip(demand_values, demand_probabilities):
+    rows.append([str(d), fmt(p, 2)])
+  print_table(["Спрос", "Вероятность"], rows)
+
+  print_step(3, "Симуляция прибыли для каждого числа серверов")
+  rng = random.Random(seed)
+  candidate_servers = [
+    10000, 20000, 30000, 40000, 50000, 60000, 70000,
+  ]
+  results = []
+  for reserved in candidate_servers:
+    total_profit = 0.0
+    for _ in range(n_trials):
+      roll = rng.random()
+      cumulative = 0.0
+      demand = demand_values[-1]
+      for d, p in zip(demand_values, demand_probabilities):
+        cumulative += p
+        if roll <= cumulative:
+          demand = d
+          break
+
+      served = min(demand, reserved)
+      unused = max(reserved - demand, 0)
+      profit = (
+        served * revenue_per_server
+        - reserved * reservation_cost
+        + unused * refund_per_unused
+      )
+      total_profit += profit
+    average_profit = total_profit / n_trials
+    results.append((reserved, average_profit))
+
+  rows = []
+  best_reserved = None
+  best_profit = -math.inf
+  for reserved, profit in results:
+    rows.append([str(reserved), fmt(profit, 2)])
+    if profit > best_profit:
+      best_profit = profit
+      best_reserved = reserved
+  print_table(["Серверов", "Ср. прибыль"], rows)
+
+  print_step(4, "Выбор оптимального решения")
+  print_indented(f"Максимальная средняя прибыль: {fmt(best_profit, 2)} у.е.")
+  print_indented(f"Оптимальное число серверов: {best_reserved}")
+  print()
+
+  print_indented("Вывод: резервировать следует количество серверов,")
+  print_indented("соответствующее максимальной средней прибыли по результатам")
+  print_indented("1000 имитационных испытаний для каждого варианта.")
+  print("=" * 78)
+  print()
+
+
+def run_task_3():
+  task_3_optimal_servers(n_trials=1000)
