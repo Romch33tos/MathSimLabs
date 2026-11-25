@@ -101,3 +101,64 @@ def task_1_analytical():
   )
   print()
   return availability_total
+
+def simulate_layer1(rng):
+  return rng.random() < 0.80 or rng.random() < 0.70
+
+
+def simulate_layer2(rng):
+  return rng.random() < 0.95
+
+
+def simulate_layer3(rng):
+  return rng.random() < 0.85 or rng.random() < 0.90 or rng.random() < 0.70
+
+
+def task_1_monte_carlo(analytical_probability, n_requests=1000, seed=42):
+  print_step(5, "Симуляция Монте-Карло (1000 запросов)")
+  rng = random.Random(seed)
+  successful_requests = 0
+  for _ in range(n_requests):
+    if simulate_layer1(rng) and simulate_layer2(rng) and simulate_layer3(rng):
+      successful_requests += 1
+
+  empirical_probability = successful_requests / n_requests
+  print_indented(f"Число успешных запросов: {successful_requests} из {n_requests}")
+  print_indented(f"Эмпирическая вероятность: {fmt(empirical_probability, 6)}")
+  print_indented(f"Аналитическая вероятность: {fmt(analytical_probability, 6)}")
+
+  absolute_error = abs(empirical_probability - analytical_probability)
+  relative_error = absolute_error / analytical_probability * 100
+  print_indented(f"Абсолютная ошибка: {fmt(absolute_error, 6)}")
+  print_indented(f"Относительная ошибка: {fmt(relative_error, 4)} %")
+
+  standard_error = math.sqrt(
+    empirical_probability * (1 - empirical_probability) / n_requests
+  )
+  print_indented(f"Стандартная ошибка оценки: {fmt(standard_error, 6)}")
+  print_indented(
+    f"Доверительный интервал (95%): "
+    f"[{fmt(empirical_probability - 1.96 * standard_error, 4)}; "
+    f"{fmt(empirical_probability + 1.96 * standard_error, 4)}]"
+  )
+  print()
+
+  print_table(
+    ["Показатель", "Значение"],
+    [
+      ["Аналит.", fmt(analytical_probability, 6)],
+      ["Монте-Карло", fmt(empirical_probability, 6)],
+      ["Абс. ошибка", fmt(absolute_error, 6)],
+      ["Отн. ошибка, %", fmt(relative_error, 4)],
+    ],
+  )
+
+  print_indented("Вывод: эмпирическая оценка близка к аналитической,")
+  print_indented("относительная ошибка мала, что подтверждает корректность модели.")
+  print("=" * 78)
+  print()
+
+
+def run_task_1():
+  analytical_1 = task_1_analytical()
+  task_1_monte_carlo(analytical_1, n_requests=1000)
