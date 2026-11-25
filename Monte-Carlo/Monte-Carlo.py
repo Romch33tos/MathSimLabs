@@ -162,3 +162,40 @@ def task_1_monte_carlo(analytical_probability, n_requests=1000, seed=42):
 def run_task_1():
   analytical_1 = task_1_analytical()
   task_1_monte_carlo(analytical_1, n_requests=1000)
+
+def task_2_analytical():
+  print_header("ЗАДАЧА 2. ОБНАРУЖЕНИЕ СБОЯ КОМПЬЮТЕРА")
+
+  print_step(1, "Вероятности возникновения сбоя по устройствам")
+  print_indented("Отношение n1:n2:n3 = 2:3:5, сумма частей = 10")
+  probability_alu = 2 / 10
+  probability_ram = 3 / 10
+  probability_other = 5 / 10
+  print_indented(f"P(АЛУ) = 2/10 = {fmt(probability_alu, 4)}")
+  print_indented(f"P(ОЗУ) = 3/10 = {fmt(probability_ram, 4)}")
+  print_indented(f"P(прочие) = 5/10 = {fmt(probability_other, 4)}")
+  print()
+
+  print_step(2, "Вероятности обнаружения сбоя")
+  detection_alu = 0.8
+  detection_ram = 0.9
+  detection_other = 0.95
+  print_indented(f"p1 = {fmt(detection_alu, 4)}, p2 = {fmt(detection_ram, 4)}, "
+                 f"p3 = {fmt(detection_other, 4)}")
+  print()
+
+  print_step(3, "Полная вероятность обнаружения сбоя")
+  print_indented("P(обнаружен) = Σ P(устройство) * P(обнаружение | устройство)")
+  probability_detected = (
+    probability_alu * detection_alu
+    + probability_ram * detection_ram
+    + probability_other * detection_other
+  )
+  print_indented(
+    f"  = {fmt(probability_alu, 2)}*{fmt(detection_alu, 2)} + "
+    f"{fmt(probability_ram, 2)}*{fmt(detection_ram, 2)} + "
+    f"{fmt(probability_other, 2)}*{fmt(detection_other, 2)}"
+  )
+  print_indented(f"  = {fmt(probability_detected, 6)}")
+  print()
+  return probability_detected
