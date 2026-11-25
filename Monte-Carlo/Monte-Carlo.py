@@ -420,3 +420,38 @@ def task_4_robot_repair(n_simulations=10000, seed=99):
 
 def run_task_4():
   task_4_robot_repair(n_simulations=10000)
+
+def print_menu():
+  print_header("МЕНЮ ЗАПУСКА ЗАДАЧ")
+  print_indented("1 - Доступность IT-инфраструктуры")
+  print_indented("2 - Обнаружение сбоя компьютера")
+  print_indented("3 - Оптимальное число серверов")
+  print_indented("4 - Ремонт промышленных роботов")
+  print_indented("0 - Выход")
+  print()
+
+
+def main():
+  actions = {
+    "1": run_task_1,
+    "2": run_task_2,
+    "3": run_task_3,
+    "4": run_task_4,
+  }
+  while True:
+    print_menu()
+    choice = input("  Выберите пункт меню: ").strip()
+    print()
+    if choice == "0":
+      print_indented("Выход из программы.")
+      break
+    action = actions.get(choice)
+    if action is None:
+      print_indented("Неверный пункт меню. Введите 1, 2, 3, 4 или 0.")
+      print()
+      continue
+    action()
+
+
+if __name__ == "__main__":
+  main()
