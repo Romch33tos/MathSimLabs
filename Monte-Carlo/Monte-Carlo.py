@@ -335,3 +335,88 @@ def task_3_optimal_servers(n_trials=1000, seed=123):
 
 def run_task_3():
   task_3_optimal_servers(n_trials=1000)
+
+def simulate_robot_repair(rng):
+  components_count = 5
+  inspection_time = sum(rng.uniform(2, 5) for _ in range(components_count))
+
+  failed_components = sum(
+    1 for _ in range(components_count) if rng.random() < 0.1
+  )
+
+  replacement_time = 0.0
+  for _ in range(failed_components):
+    replacement_time += max(0.0, rng.gauss(5, 1))
+
+  if failed_components == 0:
+    adjustment_time = rng.expovariate(1 / 10)
+  else:
+    adjustment_time = rng.expovariate(1 / 15)
+
+  total_time = inspection_time + replacement_time + adjustment_time
+  return total_time, failed_components
+
+
+def task_4_robot_repair(n_simulations=10000, seed=99):
+  print_header("ЗАДАЧА 4. РЕМОНТ ПРОМЫШЛЕННЫХ РОБОТОВ")
+
+  print_step(1, "Параметры модели")
+  print_indented("Компонентов: 5, вероятность неисправности каждого: 0.1")
+  print_indented("Осмотр: равномерное U(2, 5) мин на компонент")
+  print_indented("Замена: нормальное N(5, 1) мин на компонент")
+  print_indented("Мелкая наладка: экспоненциальное, среднее 10 мин")
+  print_indented("Полная наладка: экспоненциальное, среднее 15 мин")
+  print()
+
+  print_step(2, "Симуляция Монте-Карло")
+  rng = random.Random(seed)
+  total_time_sum = 0.0
+  full_adjustment_count = 0
+  failed_components_sum = 0
+  for _ in range(n_simulations):
+    total_time, failed_components = simulate_robot_repair(rng)
+    total_time_sum += total_time
+    failed_components_sum += failed_components
+    if failed_components > 0:
+      full_adjustment_count += 1
+
+  average_total_time = total_time_sum / n_simulations
+  full_adjustment_share = full_adjustment_count / n_simulations * 100
+  average_failed_components = failed_components_sum / n_simulations
+
+  print_indented(f"Число имитаций: {n_simulations}")
+  print()
+
+  print_step(3, "Результаты")
+  print_indented(f"а) Среднее время ремонта: {fmt(average_total_time, 4)} мин")
+  print_indented(f"б) Доля полной наладки: {fmt(full_adjustment_share, 4)} %")
+  print_indented(f"в) Среднее число замен: {fmt(average_failed_components, 4)}")
+
+  theoretical_full = (1 - 0.9 ** 5) * 100
+  theoretical_components = 5 * 0.1
+  print()
+  print_indented(
+    f"Теоретическая доля полной наладки: {fmt(theoretical_full, 4)} %"
+  )
+  print_indented(
+    f"Теоретическое среднее число замен: {fmt(theoretical_components, 4)}"
+  )
+  print()
+
+  print_table(
+    ["Показатель", "Значение"],
+    [
+      ["Ср. время, мин", fmt(average_total_time, 4)],
+      ["Полная наладка, %", fmt(full_adjustment_share, 4)],
+      ["Ср. замен", fmt(average_failed_components, 4)],
+    ],
+  )
+
+  print_indented("Вывод: результаты имитации согласуются с теоретическими")
+  print_indented("оценками; расхождения объясняются случайностью выборки.")
+  print("=" * 78)
+  print()
+
+
+def run_task_4():
+  task_4_robot_repair(n_simulations=10000)
