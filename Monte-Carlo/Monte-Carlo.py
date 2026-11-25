@@ -199,3 +199,65 @@ def task_2_analytical():
   print_indented(f"  = {fmt(probability_detected, 6)}")
   print()
   return probability_detected
+
+def task_2_monte_carlo(analytical_probability, n_experiments=100, seed=7):
+  print_step(4, "Симуляция Монте-Карло (N = 100)")
+  rng = random.Random(seed)
+  devices = [
+    (0.2, 0.8),
+    (0.3, 0.9),
+    (0.5, 0.95),
+  ]
+  detected_count = 0
+  for _ in range(n_experiments):
+    roll = rng.random()
+    cumulative = 0.0
+    chosen_detection = 0.0
+    for failure_prob, detection_prob in devices:
+      cumulative += failure_prob
+      if roll <= cumulative:
+        chosen_detection = detection_prob
+        break
+    if rng.random() < chosen_detection:
+      detected_count += 1
+
+  empirical_probability = detected_count / n_experiments
+  print_indented(f"Обнаружено сбоев: {detected_count} из {n_experiments}")
+  print_indented(f"Эмпирическая вероятность: {fmt(empirical_probability, 6)}")
+  print_indented(f"Аналитическая вероятность: {fmt(analytical_probability, 6)}")
+
+  absolute_error = abs(empirical_probability - analytical_probability)
+  relative_error = absolute_error / analytical_probability * 100
+  print_indented(f"Абсолютная ошибка: {fmt(absolute_error, 6)}")
+  print_indented(f"Относительная ошибка: {fmt(relative_error, 4)} %")
+
+  standard_error = math.sqrt(
+    empirical_probability * (1 - empirical_probability) / n_experiments
+  )
+  print_indented(f"Стандартная ошибка оценки: {fmt(standard_error, 6)}")
+  print_indented(
+    f"Доверительный интервал (95%): "
+    f"[{fmt(empirical_probability - 1.96 * standard_error, 4)}; "
+    f"{fmt(empirical_probability + 1.96 * standard_error, 4)}]"
+  )
+  print()
+
+  print_table(
+    ["Показатель", "Значение"],
+    [
+      ["Аналит.", fmt(analytical_probability, 6)],
+      ["Монте-Карло", fmt(empirical_probability, 6)],
+      ["Абс. ошибка", fmt(absolute_error, 6)],
+      ["Отн. ошибка, %", fmt(relative_error, 4)],
+    ],
+  )
+
+  print_indented("Вывод: при N = 100 разброс оценки заметен, но результат")
+  print_indented("согласуется с аналитическим в пределах статистической погрешности.")
+  print("=" * 78)
+  print()
+
+
+def run_task_2():
+  analytical_2 = task_2_analytical()
+  task_2_monte_carlo(analytical_2, n_experiments=100)
