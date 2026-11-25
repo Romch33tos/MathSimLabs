@@ -29,3 +29,30 @@ def generate_random_sequence(seed, multiplier, increment, modulus, count):
     current = (multiplier * current + increment) % modulus
     sequence.append(current)
   return sequence
+
+def print_sequence_table(title, seq, is_float=False):
+  if title:
+    print(title)
+  columns = 5
+  sep = "  +" + "-" * 8 + "+" + ("-" * 10 + "+") * columns
+  print(sep)
+  header = "  |{:^8}|".format("i")
+  for j in range(columns):
+    header += "{:^10}|".format(f"x{j + 1}")
+  print(header)
+  print(sep)
+  rows = (len(seq) + columns - 1) // columns
+  for row in range(rows):
+    line = "  |{:^8}|".format(row * columns + 1)
+    for col in range(columns):
+      idx = row * columns + col
+      if idx < len(seq):
+        if is_float:
+          line += "{:^10}|".format(fmt(seq[idx], 4))
+        else:
+          line += "{:^10}|".format(seq[idx])
+      else:
+        line += "{:^10}|".format("")
+    print(line)
+  print(sep)
+  print()
