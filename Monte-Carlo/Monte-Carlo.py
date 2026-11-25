@@ -21,3 +21,11 @@ def print_subheader(title):
   print_line("-")
   print(title)
   print_line("-")
+
+def generate_random_sequence(seed, multiplier, increment, modulus, count):
+  sequence = []
+  current = seed
+  for _ in range(count):
+    current = (multiplier * current + increment) % modulus
+    sequence.append(current)
+  return sequence
