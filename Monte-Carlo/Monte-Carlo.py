@@ -35,6 +35,7 @@ def print_step(step_number, step_name):
 def print_indented(text):
   print("  " + text)
 
+
 def print_table(headers, rows):
   str_headers = [str(h) for h in headers]
   str_rows = [[str(cell) for cell in row] for row in rows]
@@ -64,6 +65,7 @@ def print_table(headers, rows):
     print(row_line)
   print(separator)
   print()
+
 
 def task_1_analytical():
   print_header("ЗАДАЧА 1. ДОСТУПНОСТЬ IT-ИНФРАСТРУКТУРЫ")
@@ -101,6 +103,7 @@ def task_1_analytical():
   )
   print()
   return availability_total
+
 
 def simulate_layer1(rng):
   return rng.random() < 0.80 or rng.random() < 0.70
@@ -163,6 +166,7 @@ def run_task_1():
   analytical_1 = task_1_analytical()
   task_1_monte_carlo(analytical_1, n_requests=1000)
 
+
 def task_2_analytical():
   print_header("ЗАДАЧА 2. ОБНАРУЖЕНИЕ СБОЯ КОМПЬЮТЕРА")
 
@@ -199,6 +203,7 @@ def task_2_analytical():
   print_indented(f"  = {fmt(probability_detected, 6)}")
   print()
   return probability_detected
+
 
 def task_2_monte_carlo(analytical_probability, n_experiments=100, seed=7):
   print_step(4, "Симуляция Монте-Карло (N = 100)")
@@ -261,6 +266,7 @@ def task_2_monte_carlo(analytical_probability, n_experiments=100, seed=7):
 def run_task_2():
   analytical_2 = task_2_analytical()
   task_2_monte_carlo(analytical_2, n_experiments=100)
+
 
 def task_3_optimal_servers(n_trials=1000, seed=123):
   print_header("ЗАДАЧА 3. ОПТИМАЛЬНОЕ ЧИСЛО ОБЛАЧНЫХ СЕРВЕРОВ")
@@ -335,6 +341,7 @@ def task_3_optimal_servers(n_trials=1000, seed=123):
 
 def run_task_3():
   task_3_optimal_servers(n_trials=1000)
+
 
 def simulate_robot_repair(rng):
   components_count = 5
@@ -420,6 +427,7 @@ def task_4_robot_repair(n_simulations=10000, seed=99):
 
 def run_task_4():
   task_4_robot_repair(n_simulations=10000)
+
 
 def print_menu():
   print_header("МЕНЮ ЗАПУСКА ЗАДАЧ")
